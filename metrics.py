@@ -731,3 +731,18 @@ class PercentLineupChange(object):
                 results[team] = float((1.00 - (float(num_started_previous_players) / float(started_player_count))) * 100.00)
 
         return results
+
+
+class TeamMvp(object):
+
+    def __init__(self):
+        pass
+
+    def get_weekly_mvp(self):
+        pass
+
+    def get_season_mvp(self):
+        pass
+
+    def execute_team_mvp(self):
+        pass
