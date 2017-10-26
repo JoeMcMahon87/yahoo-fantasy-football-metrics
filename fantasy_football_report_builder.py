@@ -11,7 +11,7 @@ from ConfigParser import ConfigParser
 import yql
 from yql.storage import FileTokenStore
 
-from metrics import PointsByPosition, SeasonAverageCalculator, Breakdown, CalculateMetrics, PowerRanking
+from metrics import PointsByPosition, SeasonAverageCalculator, Breakdown, CalculateMetrics, PowerRanking, PercentLineupChange
 from pdf_generator import PdfGenerator
 
 
@@ -253,7 +253,11 @@ class FantasyFootballReport(object):
                 if player_selected_position != "BN":
                     positions_filled_active.append(player_selected_position)
 
-                player_info_dict = {"name": player.get("name")["full"],
+                # if teams_dict.get(team).get("manager") == "uberfastman":
+                #     print(player)
+                #     print("-" * 100)
+                player_info_dict = {"player_key": player.get("player_key"),
+                                    "name": player.get("name")["full"],
                                     "status": player.get("status"),
                                     "bye_week": int(player.get("bye_weeks")["week"]),
                                     "selected_position": player.get("selected_position").get("position"),
@@ -262,27 +266,11 @@ class FantasyFootballReport(object):
 
                 players.append(player_info_dict)
 
-            # for testing ties
-            # test_score = 70
-            # if int(team_id) == 1:
-            #     test_score = 100
-            # if int(team_id) == 2:
-            #     test_score = 100
-            # if int(team_id) == 3:
-            #     test_score = 100
-            # if int(team_id) == 4:
-            #     test_score = 90
-            # if int(team_id) == 5:
-            #     test_score = 90
-            # if int(team_id) == 6:
-            #     test_score = 90
-
             team_results_dict[team_name] = {
                 "name": team_name,
                 "manager": teams_dict.get(team).get("manager"),
                 "players": players,
                 "score": sum([p["fantasy_points"] for p in players if p["selected_position"] != "BN"]),
-                # "score": test_score,
                 "bench_score": sum([p["fantasy_points"] for p in players if p["selected_position"] == "BN"]),
                 "team_id": team_id,
                 "positions_filled_active": positions_filled_active
@@ -307,7 +295,8 @@ class FantasyFootballReport(object):
                                                                                           team_results_dict)
 
         # calculate luck metric and add values to team_results_dict
-        Breakdown().execute_breakdown(team_results_dict, matchups_list)
+        breakdown_metric = Breakdown()
+        breakdown_metric.execute_breakdown(team_results_dict, matchups_list)
 
         power_ranking_metric = PowerRanking()
         power_ranking_results = power_ranking_metric.execute_power_ranking(team_results_dict)
@@ -345,6 +334,10 @@ class FantasyFootballReport(object):
         luck_results = sorted(team_results_dict.iteritems(),
                               key=lambda (k, v): (v.get("luck"), k), reverse=True)
         luck_results_data = calculate_metrics.get_luck_data(luck_results)
+
+        percent_lineup_change = PercentLineupChange(self.league_key, chosen_week, self.y3, self.token)
+        percent_lineup_change_results = percent_lineup_change.execute_percent_lineup_change(team_results_dict)
+        print("PERCENT LINEUP CHANGES:", percent_lineup_change_results)
 
         # count number of ties for points, coaching efficiency, and luck
         # tie_type can be "score", "coaching_efficiency", "luck", or "power_rank"

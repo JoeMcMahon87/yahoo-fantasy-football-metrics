@@ -299,17 +299,17 @@ class CalculateMetrics(object):
                 test_luck = -5.00
                 test_power_rank = 6.0
 
-                # # uncomment to test scoring ties
-                # team_results_dict.get(team)["score"] = test_score
-                #
-                # # uncomment to test coaching efficiency ties
-                # team_results_dict.get(team)["coaching_efficiency"] = test_efficiency
-                #
-                # # # uncomment to test luck ties
-                # team_results_dict.get(team)["luck"] = test_luck
-                #
-                # # # uncomment to test power ranking ties
-                # team_results_dict.get(team)["power_rank"] = test_power_rank
+            # # uncomment to test scoring ties
+            # team_results_dict.get(team)["score"] = test_score
+            #
+            # # uncomment to test coaching efficiency ties
+            # team_results_dict.get(team)["coaching_efficiency"] = test_efficiency
+            #
+            # # # uncomment to test luck ties
+            # team_results_dict.get(team)["luck"] = test_luck
+            #
+            # # # uncomment to test power ranking ties
+            # team_results_dict.get(team)["power_rank"] = test_power_rank
 
 
 class CoachingEfficiency(object):
@@ -687,5 +687,47 @@ class PowerRanking(object):
                 "luck_rank": team["luck_rank"],
                 "power_rank": team["power_rank"]
             }
+
+        return results
+
+
+class PercentLineupChange(object):
+
+    def __init__(self, league_key, chosen_week, yql, token):
+        self.league_key = league_key
+        self.week = chosen_week
+        self.yql = yql
+        self.token = token
+
+    def execute_percent_lineup_change(self, teams):
+
+        results = {}
+        for team in teams.keys():
+
+            if int(self.week) == 1:
+                results[team] = 0.00
+            else:
+                team_key = teams.get(team).get("team_id")
+                previous_week_player_data = self.yql.execute("select * from fantasysports.teams.roster.stats where team_key='" + self.league_key + ".t." + team_key + "' and week='" + str(int(self.week) - 1) + "'", token=self.token).rows
+
+                previous_week_player_info = previous_week_player_data[0].get("roster").get("players").get("player")
+
+                previous_player_dict = {}
+                for player in previous_week_player_info:
+                    player_selected_position = player.get("selected_position").get("position")
+                    if player_selected_position != "BN":
+                        previous_player_dict[player.get("player_key")] = player.get("selected_position").get("position")
+
+                roster_counts = Counter(previous_player_dict.values())
+                started_player_count = sum([roster_counts.get(key) for key in roster_counts.keys() if key != "BN"])
+
+                team_info = teams.get(team)
+                num_started_previous_players = 0
+                # if team_info.get("manager") == "uberfastman":
+                for player in team_info.get("players"):
+                    if player.get("player_key") in previous_player_dict.keys():
+                        num_started_previous_players += 1
+
+                results[team] = float((1.00 - (float(num_started_previous_players) / float(started_player_count))) * 100.00)
 
         return results
