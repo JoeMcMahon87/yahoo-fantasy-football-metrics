@@ -337,7 +337,6 @@ class FantasyFootballReport(object):
 
         percent_lineup_change = PercentLineupChange(self.league_key, chosen_week, self.y3, self.token)
         percent_lineup_change_results = percent_lineup_change.execute_percent_lineup_change(team_results_dict)
-        print("PERCENT LINEUP CHANGES:", percent_lineup_change_results)
 
         # count number of ties for points, coaching efficiency, and luck
         # tie_type can be "score", "coaching_efficiency", "luck", or "power_rank"
