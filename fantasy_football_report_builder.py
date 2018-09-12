@@ -59,7 +59,7 @@ class FantasyFootballReport(object):
             else:
                 webbrowser.open(auth_url.decode('utf-8'))
 
-            verifier = input("Enter the code: ")
+            verifier = raw_input("Enter the code: ")
             self.token = self.y3.get_access_token(request_token, verifier)
             token_store.set("foo", self.token)
 
@@ -136,7 +136,7 @@ class FantasyFootballReport(object):
                 if 0 < int(chosen_week) <= int(self.league_standings_data[0].get("current_week")) - 1:
                     self.chosen_week = chosen_week
                 else:
-                    incomplete_week = input(
+                    incomplete_week = raw_input(
                         "Are you sure you want to generate a report for an incomplete week? (y/n) -> ")
                     if incomplete_week == "y":
                         self.chosen_week = chosen_week

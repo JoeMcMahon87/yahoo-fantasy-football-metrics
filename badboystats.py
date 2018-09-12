@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import io
 import requests
 import csv
 
@@ -16,7 +17,7 @@ class BadBoyStats(object):
         self.rankings = {}
 
         # Load the scoring based on crime categories
-        with open('crimecatsscoring.csv', mode='r', encoding='utf-8-sig') as infile:
+        with io.open('crimecatsscoring.csv', mode='r', encoding='utf-8-sig') as infile:
             reader = csv.reader(infile)
             for rows in reader:
                 cat = rows[0].upper().strip()
