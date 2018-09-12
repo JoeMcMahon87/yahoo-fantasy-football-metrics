@@ -15,8 +15,7 @@ import json
 import re
 import time
 import pprint
-from urlparse import urlparse
-from urllib import urlencode
+from urllib.parse import urlparse, urlencode
 from httplib2 import Http
 from six import string_types
 
