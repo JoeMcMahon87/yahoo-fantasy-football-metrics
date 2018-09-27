@@ -25,6 +25,7 @@ class PdfGenerator(object):
                  report_title_text,
                  standings_title_text,
                  scores_title_text,
+                 top_scorers_title_text,
                  coaching_efficiency_title_text,
                  luck_title_text,
                  power_ranking_title_text,
@@ -64,6 +65,7 @@ class PdfGenerator(object):
         self.num_tied_for_first_bad_boy = report_info_dict.get("num_tied_for_first_bad_boy")
         self.weekly_points_by_position_data = report_info_dict.get("weekly_points_by_position_data")
         self.season_average_team_points_by_position = report_info_dict.get("season_average_points_by_position")
+        self.weekly_top_scorers = report_info_dict.get("weekly_top_scorers")
 
         # team data for use on team specific stats pages
         self.team_data = report_info_dict.get("team_results")
@@ -131,6 +133,7 @@ class PdfGenerator(object):
         self.efficiency_headers = [["Place", "Team", "Manager", "Coaching Efficiency (%)", "Season Avg. (Place)"]]
         self.luck_headers = [["Place", "Team", "Manager", "Luck (%)", "Season Avg. (Place)"]]
         self.bad_boy_headers = [["Place", "Team", "Manager", "Bad Boy Pts", "Worst Offense", "# Offenders"]]
+        self.weekly_top_scorer_headers = [["Week", "Team", "Manager", "Score"]]
         self.tie_for_first_footer = "<i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Tie(s).</i>"
         self.break_efficiency_ties_footer = "<i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*The league commissioner will " \
                                             "resolve coaching efficiency ties manually. The tiebreaker goes " \
@@ -153,6 +156,7 @@ class PdfGenerator(object):
         self.report_title = self.create_title(report_title_text, element_type="document")
         self.standings_title = self.create_title(standings_title_text, element_type="section")
         self.scores_title = self.create_title(scores_title_text, element_type="section")
+        self.top_scorers_title = self.create_title(top_scorers_title_text, element_type="section")
         self.efficiency_title = self.create_title(coaching_efficiency_title_text, element_type="section")
         self.luck_title = self.create_title(luck_title_text, element_type="section")
         self.power_ranking_title = self.create_title(power_ranking_title_text, element_type="section")
@@ -236,6 +240,18 @@ class PdfGenerator(object):
             else:
                 for index, team in enumerate(self.score_results_data):
                     self.score_results_data[index] = team[:-1]
+
+        if metric_type == "top_scorers":
+            temp_data = []
+            for wk in data:
+                entry = [
+                    wk['week'],
+                    wk['team'],
+                    wk['manager'],
+                    wk['score']
+                ]
+                temp_data.append(entry)
+                data = temp_data
 
         data_table = self.create_data_table(headers, data, table_style, col_widths, tied_metric_bool)
 
@@ -433,6 +449,11 @@ class PdfGenerator(object):
         self.create_section(elements, self.scores_title, self.scores_headers, self.score_results_data,
                             self.style_tied_scores, self.metrics_col_widths, self.spacer_small,
                             tied_metric_bool=self.tied_scores_bool, metric_type="scores")
+
+        # weekly top scorers
+        self.create_section(elements, self.top_scorers_title, self.weekly_top_scorer_headers, self.weekly_top_scorers,
+                            self.style_tied_scores, self.metrics_col_widths, self.spacer_small,
+                            tied_metric_bool=self.tied_scores_bool, metric_type="top_scorers")
 
         # coaching efficiency
         self.create_section(elements, self.efficiency_title, self.efficiency_headers,
