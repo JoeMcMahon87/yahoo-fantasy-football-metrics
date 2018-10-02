@@ -320,7 +320,8 @@ class PdfGenerator(object):
                 table = Table(col_headers, colWidths=tied_score_col_widths)
             table.setStyle(table_style_for_ties)
         elif bad_boy_table:
-            table.setStyle(self.style_bad_boy_table)
+            if data:
+                table.setStyle(self.style_bad_boy_table)
         else:
             table.setStyle(self.style)
         return table
