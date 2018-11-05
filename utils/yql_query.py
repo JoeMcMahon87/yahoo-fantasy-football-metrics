@@ -11,20 +11,23 @@ from resources.local_dependencies.yql3.storage import FileTokenStore
 # noinspection SqlNoDataSourceInspection,SqlDialectInspection
 class YqlQuery(object):
 
-    def __init__(self, config, league_id, save_bool, dev_bool, league_test_dir):
+    def __init__(self, config, league_id, save_bool, dev_bool, league_test_dir, base_dir=""):
 
+        self.config = config
         self.league_id = league_id
         self.save_bool = save_bool
         self.dev_bool = dev_bool
         self.league_test_dir = league_test_dir
         self.league_key = None
         self.league_name = None
+        self.playoff_slots = None
+        self.num_regular_season_weeks = None
 
         command_line_only = config.getboolean("OAuth_Settings", "command_line_only")
 
         if not self.dev_bool:
             # yahoo oauth api (consumer) key and secret
-            with open("./authentication/private.txt", "r") as auth_file:
+            with open(base_dir + "./authentication/yahoo/private.txt", "r") as auth_file:
                 auth_data = auth_file.read().split("\n")
             consumer_key = auth_data[0]
             consumer_secret = auth_data[1]
@@ -32,10 +35,10 @@ class YqlQuery(object):
             # yahoo oauth process
             self.y3 = ThreeLegged(consumer_key, consumer_secret)
             _cache_dir = config.get("OAuth_Settings", "yql_cache_dir")
-            if not os.access(_cache_dir, os.R_OK):
-                os.mkdir(_cache_dir)
+            if not os.access(base_dir + _cache_dir, os.R_OK):
+                os.mkdir(base_dir + _cache_dir)
 
-            token_store = FileTokenStore(_cache_dir, secret="sasfasdfdasfdaf")
+            token_store = FileTokenStore(base_dir + _cache_dir, secret="sasfasdfdasfdaf")
             stored_token = token_store.get("foo")
 
             if not stored_token:
@@ -129,6 +132,20 @@ class YqlQuery(object):
                       "roster_data.json", "w") as rd_file:
                 json.dump(roster_data, rd_file)
 
+        playoff_slots = roster_data[0].get("settings").get("num_playoff_teams")
+        playoff_start_week = roster_data[0].get("settings").get("playoff_start_week")
+
+        if playoff_slots:
+            self.playoff_slots = int(playoff_slots)
+        else:
+            self.playoff_slots = self.config.getint("Fantasy_Football_Report_Settings", "num_playoff_slots")
+
+        if playoff_start_week:
+            self.num_regular_season_weeks = int(playoff_start_week) - 1
+        else:
+            self.num_regular_season_weeks = self.config.getint("Fantasy_Football_Report_Settings",
+                                                               "num_regular_season_weeks")
+
         return roster_data
 
     def get_teams_data(self):
@@ -156,17 +173,20 @@ class YqlQuery(object):
         if not self.dev_bool:
             result = self.yql_query(
                 "select * from fantasysports.leagues.scoreboard where league_key='{0}' and week='{1}'".format(
-                    self.league_key, chosen_week))
+                    self.league_key, str(chosen_week)))
         else:
             with open(self.league_test_dir +
-                      "/week_" + chosen_week + "/" +
+                      "/week_" + str(chosen_week) + "/" +
                       "result_data.json", "r") as rsd_file:
                 result = json.load(rsd_file)
 
         if self.save_bool:
-            with open(self.league_test_dir +
-                      "/week_" + chosen_week + "/" +
-                      "result_data.json", "w") as rsd_file:
+
+            result_data_path = self.league_test_dir + "/week_" + str(chosen_week) + "/"
+
+            if not os.path.exists(result_data_path):
+                os.makedirs(result_data_path)
+            with open(result_data_path + "result_data.json", "w") as rsd_file:
                 json.dump(result, rsd_file)
 
         return result[0].get("scoreboard").get("matchups").get("matchup")
